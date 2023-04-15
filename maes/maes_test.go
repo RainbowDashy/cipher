@@ -66,10 +66,12 @@ func TestCipher(t *testing.T) {
 		0xc5, 0x5a,
 	}
 	wk := make([]uint32, 44)
+	wt := make([]uint32, 40)
 	dst := make([]byte, len(plaintext))
 	keyExpansion(key, wk)
-	encryptBlock(wk, dst, plaintext)
+	// tweakExpansion()
+	encryptBlock(wk, wt, dst, plaintext)
 	a.Equal(ciphertext, dst)
-	decrptyBlock(wk, dst, ciphertext)
+	decrptyBlock(wk, wt, dst, ciphertext)
 	a.Equal(plaintext, dst)
 }
