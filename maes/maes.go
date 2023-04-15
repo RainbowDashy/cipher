@@ -95,16 +95,37 @@ func keyExpansion(key []byte, wk []uint32) {
 	}
 	i := 0
 	nk := len(key) / 4
+	w := make([]uint32, 13)
 	for ; i < nk; i++ {
-		wk[i] = binary.BigEndian.Uint32(key[4*i:])
+		w[i] = binary.BigEndian.Uint32(key[4*i:])
 	}
-	for ; i < len(wk); i++ {
-		t := wk[i-1]
+	for ; i < len(w); i++ {
+		t := w[i-1]
 		if i%nk == 0 {
 			t = subw(rotw(t)) ^ rcon[i/nk]
 		}
-		wk[i] = wk[i-nk] ^ t
+		w[i] = w[i-nk] ^ t
 	}
+
+	for r := 0; r < 9; r++ {
+		i := 4 * r
+		wk[i] = w[r]
+		wk[i+1] = w[r]
+		wk[i+2] = w[r]
+		wk[i+3] = w[r]
+	}
+	r := 9
+	i = 4 * r
+	wk[i] = w[r]
+	wk[i+1] = w[r+1]
+	wk[i+2] = 0
+	wk[i+3] = 0
+	r += 2
+	i += 4
+	wk[i] = (w[r]>>8&0xff)<<8 | (w[r+1] & 0xff)
+	wk[i+1] = (w[r]>>16&0xff)<<16 | (w[r+1]>>8&0xff)<<8
+	wk[i+2] = (w[r]>>24&0xff)<<24 | (w[r+1]>>16&0xff)<<16
+	wk[i+3] = (w[r] & 0xff) | (w[r+1]>>24&0xff)<<24
 }
 
 func tweakExpansion(tweak []byte, trcon, wt []uint32) {

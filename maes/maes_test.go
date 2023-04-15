@@ -47,10 +47,25 @@ func TestKeyExpansion(t *testing.T) {
 	w := make([]uint32, 44)
 	keyExpansion(key, w)
 	a.Equal(uint32(0x2b7e1516), w[0])
-	a.Equal(uint32(0x28aed2a6), w[1])
-	a.Equal(uint32(0xabf71588), w[2])
-	a.Equal(uint32(0x09cf4f3c), w[3])
-	a.Equal(uint32(0xa0fafe17), w[4])
+	a.Equal(uint32(0x2b7e1516), w[1])
+	a.Equal(uint32(0x2b7e1516), w[2])
+	a.Equal(uint32(0x2b7e1516), w[3])
+
+	a.Equal(uint32(0x2b7e1516), w[0])
+	a.Equal(uint32(0x28aed2a6), w[4])
+	a.Equal(uint32(0xabf71588), w[8])
+	a.Equal(uint32(0x09cf4f3c), w[12])
+	a.Equal(uint32(0xa0fafe17), w[16])
+
+	a.Equal(uint32(0x7a96b943), w[36])
+	a.Equal(uint32(0x5935807a), w[37])
+	a.Equal(uint32(0x00000000), w[38])
+	a.Equal(uint32(0x00000000), w[39])
+
+	a.Equal(uint32(0x0000f67d), w[40])
+	a.Equal(uint32(0x00594700), w[41])
+	a.Equal(uint32(0x73800000), w[42])
+	a.Equal(uint32(0x3d00007f), w[43])
 }
 
 func TestTweakExpansion(t *testing.T) {
