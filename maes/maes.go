@@ -4,16 +4,16 @@ import (
 	"encoding/binary"
 )
 
-func encryptBlock(w []uint32, dst, src []byte) {
+func encryptBlock(wk []uint32, dst, src []byte) {
 	s0 := binary.BigEndian.Uint32(src[0:4])
 	s1 := binary.BigEndian.Uint32(src[4:8])
 	s2 := binary.BigEndian.Uint32(src[8:12])
 	s3 := binary.BigEndian.Uint32(src[12:16])
 
-	s0 ^= w[0]
-	s1 ^= w[1]
-	s2 ^= w[2]
-	s3 ^= w[3]
+	s0 ^= wk[0]
+	s1 ^= wk[1]
+	s2 ^= wk[2]
+	s3 ^= wk[3]
 
 	nr := 10
 	k := 4
@@ -21,19 +21,19 @@ func encryptBlock(w []uint32, dst, src []byte) {
 		s0, s1, s2, s3 = subBytes(s0, s1, s2, s3)
 		s0, s1, s2, s3 = shiftRows(s0, s1, s2, s3)
 		s0, s1, s2, s3 = mixColumns(s0, s1, s2, s3)
-		s0 ^= w[k+0]
-		s1 ^= w[k+1]
-		s2 ^= w[k+2]
-		s3 ^= w[k+3]
+		s0 ^= wk[k+0]
+		s1 ^= wk[k+1]
+		s2 ^= wk[k+2]
+		s3 ^= wk[k+3]
 		k += 4
 	}
 
 	s0, s1, s2, s3 = subBytes(s0, s1, s2, s3)
 	s0, s1, s2, s3 = shiftRows(s0, s1, s2, s3)
-	s0 ^= w[k+0]
-	s1 ^= w[k+1]
-	s2 ^= w[k+2]
-	s3 ^= w[k+3]
+	s0 ^= wk[k+0]
+	s1 ^= wk[k+1]
+	s2 ^= wk[k+2]
+	s3 ^= wk[k+3]
 
 	binary.BigEndian.PutUint32(dst[0:4], s0)
 	binary.BigEndian.PutUint32(dst[4:8], s1)
@@ -41,7 +41,7 @@ func encryptBlock(w []uint32, dst, src []byte) {
 	binary.BigEndian.PutUint32(dst[12:16], s3)
 }
 
-func decrptyBlock(w []uint32, dst, src []byte) {
+func decrptyBlock(wk []uint32, dst, src []byte) {
 	s0 := binary.BigEndian.Uint32(src[0:4])
 	s1 := binary.BigEndian.Uint32(src[4:8])
 	s2 := binary.BigEndian.Uint32(src[8:12])
@@ -49,29 +49,29 @@ func decrptyBlock(w []uint32, dst, src []byte) {
 
 	nr := 10
 	k := 4 * nr
-	s0 ^= w[k+0]
-	s1 ^= w[k+1]
-	s2 ^= w[k+2]
-	s3 ^= w[k+3]
+	s0 ^= wk[k+0]
+	s1 ^= wk[k+1]
+	s2 ^= wk[k+2]
+	s3 ^= wk[k+3]
 
 	for r := 1; r < nr; r++ {
 		s0, s1, s2, s3 = invShiftRows(s0, s1, s2, s3)
 		s0, s1, s2, s3 = invSubBytes(s0, s1, s2, s3)
 		k -= 4
-		s0 ^= w[k+0]
-		s1 ^= w[k+1]
-		s2 ^= w[k+2]
-		s3 ^= w[k+3]
+		s0 ^= wk[k+0]
+		s1 ^= wk[k+1]
+		s2 ^= wk[k+2]
+		s3 ^= wk[k+3]
 		s0, s1, s2, s3 = invMixColumns(s0, s1, s2, s3)
 	}
 
 	s0, s1, s2, s3 = invShiftRows(s0, s1, s2, s3)
 	s0, s1, s2, s3 = invSubBytes(s0, s1, s2, s3)
 	k -= 4
-	s0 ^= w[k+0]
-	s1 ^= w[k+1]
-	s2 ^= w[k+2]
-	s3 ^= w[k+3]
+	s0 ^= wk[k+0]
+	s1 ^= wk[k+1]
+	s2 ^= wk[k+2]
+	s3 ^= wk[k+3]
 
 	binary.BigEndian.PutUint32(dst[0:4], s0)
 	binary.BigEndian.PutUint32(dst[4:8], s1)
@@ -87,21 +87,21 @@ func rotw(t uint32) uint32 {
 	return t<<8 | t>>24
 }
 
-func keyExpansion(key []byte, w []uint32) {
+func keyExpansion(key []byte, wk []uint32) {
 	if len(key) != 16 {
 		panic("only support 128-bit key")
 	}
 	i := 0
 	nk := len(key) / 4
 	for ; i < nk; i++ {
-		w[i] = binary.BigEndian.Uint32(key[4*i:])
+		wk[i] = binary.BigEndian.Uint32(key[4*i:])
 	}
-	for ; i < len(w); i++ {
-		t := w[i-1]
+	for ; i < len(wk); i++ {
+		t := wk[i-1]
 		if i%nk == 0 {
 			t = subw(rotw(t)) ^ rcon[i/nk]
 		}
-		w[i] = w[i-nk] ^ t
+		wk[i] = wk[i-nk] ^ t
 	}
 }
 
