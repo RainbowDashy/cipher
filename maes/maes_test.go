@@ -1,11 +1,13 @@
 package maes
 
 import (
+	"encoding/binary"
 	"math/rand"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"golang.org/x/crypto/sha3"
 )
 
 func TestSubBytes(t *testing.T) {
@@ -131,6 +133,43 @@ func TestTweakedCipher(t *testing.T) {
 	wt := make([]uint32, 40)
 	keyExpansion(key, wk)
 	tweakExpansion([]byte("this is a tweak"), trcon, wt)
+
+	encrypted := make([]byte, len(plaintext))
+	decrypted := make([]byte, len(plaintext))
+
+	encryptBlock(wk, wt, encrypted, plaintext)
+	decrptyBlock(wk, wt, decrypted, encrypted)
+	a.Equal(plaintext, decrypted)
+}
+
+func TestMCipher(t *testing.T) {
+	a := require.New(t)
+	plaintext := []byte{
+		0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd,
+		0xee, 0xff,
+	}
+	key := []byte{
+		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d,
+		0x0e, 0x0f,
+	}
+
+	trcon := make([]uint32, 10)
+	tweak := []byte("this is a tweak")
+	rt := make([]byte, 4*len(trcon))
+	sh := sha3.NewShake256()
+	sh.Write(tweak)
+	sh.Read(rt)
+	for i := range trcon {
+		trcon[i] = binary.BigEndian.Uint32(rt[4*i:])
+	}
+	wk := make([]uint32, 44)
+	wt := make([]uint32, 40)
+	keyExpansion(key, wk)
+	tweakExpansion(tweak, trcon, wt)
+
+	a.Equal(wt[0], wt[1])
+	a.Equal(wt[0], wt[2])
+	a.Equal(wt[0], wt[3])
 
 	encrypted := make([]byte, len(plaintext))
 	decrypted := make([]byte, len(plaintext))
