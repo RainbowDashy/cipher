@@ -1,4 +1,4 @@
-module github.com/RainbowDashy/cipher/aes
+module github.com/RainbowDashy/cipher
 
 go 1.19
 
