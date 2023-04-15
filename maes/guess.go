@@ -2,15 +2,48 @@ package maes
 
 import (
 	"bytes"
+	"context"
 	"encoding/binary"
+	"fmt"
 )
 
 func guessKey(plaintext, ciphertext, tweak []byte, trcon []uint32) []byte {
-
-	return nil
+	ctx, cancel := context.WithCancel(context.Background())
+	resChan := make(chan []byte, 1)
+	for i := 0; i < 16; i++ {
+		go guessPart(ctx, resChan, plaintext, ciphertext, tweak, trcon, i)
+	}
+	key := <-resChan
+	cancel()
+	close(resChan)
+	return key
 }
 
-func guess(plaintext, ciphertext, tweak []byte, trcon []uint32, a uint32) bool {
+func guessPart(ctx context.Context, resChan chan<- []byte, plaintext, ciphertext, tweak []byte, trcon []uint32, idx int) {
+	a0 := uint32(idx << 28)
+	a1 := uint32(0)
+	for {
+		if ctx.Err() != nil {
+			return
+		}
+		a := a0 | a1
+		key := guess(plaintext, ciphertext, tweak, trcon, a)
+		if key != nil {
+			resChan <- key
+			return
+		}
+		a1++
+		if a1&0xf0000000 != 0 {
+			break
+		}
+
+		if a1%0xfffffff == 0 {
+			fmt.Printf("idx %d: finishing %d\n", idx, a1/0xfffffff)
+		}
+	}
+}
+
+func guess(plaintext, ciphertext, tweak []byte, trcon []uint32, a uint32) []byte {
 	a0, a1, a2, a3 := byte(a>>24), byte(a>>16&0xff), byte(a>>8&0xff), byte(a&0xff)
 	wk := make([]uint32, 13)
 	wk[9] = uint32(a0^sbox1[ciphertext[0]])<<24 | uint32(a1^sbox1[ciphertext[13]])<<16 | uint32(a2^sbox1[ciphertext[10]])<<8 | uint32(a3^sbox1[ciphertext[7]])
@@ -31,7 +64,10 @@ func guess(plaintext, ciphertext, tweak []byte, trcon []uint32, a uint32) bool {
 	binary.BigEndian.PutUint32(key[8:12], wk[2])
 	binary.BigEndian.PutUint32(key[12:16], wk[3])
 
-	return checkKey(plaintext, ciphertext, tweak, trcon, key)
+	if checkKey(plaintext, ciphertext, tweak, trcon, key) {
+		return key
+	}
+	return nil
 }
 
 func checkKey(plaintext, ciphertext, tweak []byte, trcon []uint32, key []byte) bool {
