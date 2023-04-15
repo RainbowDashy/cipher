@@ -2,6 +2,8 @@ package maes
 
 import (
 	"encoding/binary"
+
+	"golang.org/x/crypto/sha3"
 )
 
 func encryptBlock(wk, wt []uint32, dst, src []byte) {
@@ -102,6 +104,20 @@ func keyExpansion(key []byte, wk []uint32) {
 			t = subw(rotw(t)) ^ rcon[i/nk]
 		}
 		wk[i] = wk[i-nk] ^ t
+	}
+}
+
+func tweakExpansion(tweak []byte, trcon, wt []uint32) {
+	rt := make([]byte, 4*len(wt))
+	sh := sha3.NewShake256()
+	sh.Write(tweak)
+	sh.Read(rt)
+
+	for i := 0; i < len(wt); i += 4 {
+		wt[i] = trcon[i/4]
+		wt[i+1] = wt[i]
+		wt[i+2] = binary.BigEndian.Uint32(rt[4*i:])
+		wt[i+3] = wt[i+2]
 	}
 }
 

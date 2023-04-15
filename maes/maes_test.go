@@ -1,7 +1,9 @@
 package maes
 
 import (
+	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -51,6 +53,25 @@ func TestKeyExpansion(t *testing.T) {
 	a.Equal(uint32(0xa0fafe17), w[4])
 }
 
+func TestTweakExpansion(t *testing.T) {
+	a := require.New(t)
+	trcon := make([]uint32, 10)
+	for i := range trcon {
+		trcon[i] = uint32(i)
+	}
+	wt := make([]uint32, 40)
+	tweakExpansion([]byte("this is a tweak"), trcon, wt)
+	a.Equal(wt[0], uint32(0))
+	a.Equal(wt[1], uint32(0))
+	a.Equal(wt[2], uint32(0x9a5eb1ff))
+	a.Equal(wt[3], uint32(0x9a5eb1ff))
+	a.Equal(wt[4], uint32(1))
+	a.Equal(wt[5], uint32(1))
+	a.Equal(wt[6], uint32(0x4733898b))
+	a.Equal(wt[7], uint32(0x4733898b))
+
+}
+
 func TestCipher(t *testing.T) {
 	a := require.New(t)
 	plaintext := []byte{
@@ -69,9 +90,37 @@ func TestCipher(t *testing.T) {
 	wt := make([]uint32, 40)
 	dst := make([]byte, len(plaintext))
 	keyExpansion(key, wk)
-	// tweakExpansion()
 	encryptBlock(wk, wt, dst, plaintext)
 	a.Equal(ciphertext, dst)
 	decrptyBlock(wk, wt, dst, ciphertext)
 	a.Equal(plaintext, dst)
+}
+
+func TestTweakedCipher(t *testing.T) {
+	a := require.New(t)
+	rg := rand.New(rand.NewSource(time.Now().UnixNano()))
+	plaintext := []byte{
+		0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd,
+		0xee, 0xff,
+	}
+	key := []byte{
+		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d,
+		0x0e, 0x0f,
+	}
+
+	trcon := make([]uint32, 10)
+	for i := range trcon {
+		trcon[i] = rg.Uint32()
+	}
+	wk := make([]uint32, 44)
+	wt := make([]uint32, 40)
+	keyExpansion(key, wk)
+	tweakExpansion([]byte("this is a tweak"), trcon, wt)
+
+	encrypted := make([]byte, len(plaintext))
+	decrypted := make([]byte, len(plaintext))
+
+	encryptBlock(wk, wt, encrypted, plaintext)
+	decrptyBlock(wk, wt, decrypted, encrypted)
+	a.Equal(plaintext, decrypted)
 }
