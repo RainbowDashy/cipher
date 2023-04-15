@@ -30,10 +30,10 @@ func encryptBlock(wk, wt []uint32, dst, src []byte) {
 
 	s0, s1, s2, s3 = subBytes(s0, s1, s2, s3)
 	s0, s1, s2, s3 = shiftRows(s0, s1, s2, s3)
-	s0 ^= wk[k+0] ^ wt[k+0]
-	s1 ^= wk[k+1] ^ wt[k+1]
-	s2 ^= wk[k+2] ^ wt[k+2]
-	s3 ^= wk[k+3] ^ wt[k+3]
+	s0 ^= wk[k+0]
+	s1 ^= wk[k+1]
+	s2 ^= wk[k+2]
+	s3 ^= wk[k+3]
 
 	binary.BigEndian.PutUint32(dst[0:4], s0)
 	binary.BigEndian.PutUint32(dst[4:8], s1)
