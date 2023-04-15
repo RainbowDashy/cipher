@@ -129,7 +129,7 @@ func keyExpansion(key []byte, wk []uint32) {
 }
 
 func tweakExpansion(tweak []byte, trcon, wt []uint32) {
-	rt := make([]byte, 4*len(wt))
+	rt := make([]byte, len(wt))
 	sh := sha3.NewShake256()
 	sh.Write(tweak)
 	sh.Read(rt)
@@ -137,7 +137,7 @@ func tweakExpansion(tweak []byte, trcon, wt []uint32) {
 	for i := 0; i < len(wt); i += 4 {
 		wt[i] = trcon[i/4]
 		wt[i+1] = wt[i]
-		wt[i+2] = binary.BigEndian.Uint32(rt[4*i:])
+		wt[i+2] = binary.BigEndian.Uint32(rt[i:])
 		wt[i+3] = wt[i+2]
 	}
 }

@@ -84,9 +84,8 @@ func TestTweakExpansion(t *testing.T) {
 	a.Equal(wt[3], uint32(0x9a5eb1ff))
 	a.Equal(wt[4], uint32(1))
 	a.Equal(wt[5], uint32(1))
-	a.Equal(wt[6], uint32(0x4733898b))
-	a.Equal(wt[7], uint32(0x4733898b))
-
+	a.Equal(wt[6], uint32(0x6b615ec9))
+	a.Equal(wt[7], uint32(0x6b615ec9))
 }
 
 func TestCipher(t *testing.T) {
